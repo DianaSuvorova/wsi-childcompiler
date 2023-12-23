@@ -1,15 +1,23 @@
 const SingleEntryPlugin = require('webpack/lib/SingleEntryPlugin');
 const JsonpTemplatePlugin = require('webpack/lib/web/JsonpTemplatePlugin');
 const path = require('path');
+const { SubresourceIntegrityPlugin } = require('webpack-subresource-integrity');
+const EntryOptionPlugin = require('webpack/lib/EntryOptionPlugin');
+const webpack = require('webpack');
 
 class AwesomePlugin {
     constructor() {
       // Define compilation name and output name
       this.childCompilerName = 'awesome-plugin-compilation';
-      this.outputFileName  = 'hello.js';
+      this.outputFileName = 'hello.js';
+
       // To make child compiler work, you have to have a entry in the file system
-      this.compilationEntry = './src/index.js';
-      console.log('we will get awesome plugin');
+      console.log(path.join(__dirname,'./src'));
+      this.compilationEntry  = webpack.config.getNormalizedWebpackOptions({
+        entry: {
+          main: ['./src/index.js']
+        },
+      });
     }
 
     apply(compiler) {
@@ -25,62 +33,67 @@ class AwesomePlugin {
         childCompiler.outputFileSystem = compiler.outputFileSystem;
 
         // Add SingleEntryPlugin to make all this work
-        new SingleEntryPlugin(compiler.context, this.compilationEntry, this.outputFileName).apply(childCompiler);
+       //new SingleEntryPlugin(compiler.context, this.compilationEntry, this.outputFileName).apply(childCompiler);
+       debugger;
+       EntryOptionPlugin.applyEntryOption(childCompiler, compiler.context, this.compilationEntry.entry);
+       new SubresourceIntegrityPlugin().apply(childCompiler),
 
-        console.log('we hope for emition');
-        console.log(compiler.options.entry);
 
         new JsonpTemplatePlugin().apply(childCompiler);
 
+        childCompiler.runAsChild((err, entries, childCompilation) => {
+          (err) = console.log(err);
+        });
 
 
-        compilation.hooks.additionalAssets.tapAsync(
-          this.childCompilerName,
-          childProcessDone => {
+        // compilation.hooks.additionalAssets.tapAsync(
+        //   this.childCompilerName,
+        //   childProcessDone => {
 
-            childCompiler.runAsChild((err, entries, childCompilation) => {
-              if (err) {
-                return childProcessDone(err);
-              }
+        //     childCompiler.runAsChild((err, entries, childCompilation) => {
+        //       if (err) {
+        //         return childProcessDone(err);
+        //       }
 
-              if (childCompilation.errors.length > 0) {
-                return childProcessDone(childCompilation.errors[0]);
-              }
+        //       if (childCompilation.errors.length > 0) {
+        //         return childProcessDone(childCompilation.errors[0]);
+        //       }
 
-              compilation.hooks.processAssets.tap(this.childCompilerName, () => {
-                compilation.assets = Object.assign(
-                  childCompilation.assets,
-                  compilation.assets,
-                );
 
-                compilation.namedChunkGroups = Object.assign(
-                  childCompilation.namedChunkGroups,
-                  compilation.namedChunkGroups,
-                );
+        //       compilation.hooks.processAssets.tap(this.childCompilerName, () => {
+        //         compilation.assets = Object.assign(
+        //           childCompilation.assets,
+        //           compilation.assets,
+        //         );
 
-                const childChunkFileMap = childCompilation.chunks.reduce(
-                  (chunkMap, chunk) => {
-                    chunkMap[chunk.name] = chunk.files;
-                    return chunkMap;
-                  },
-                  {},
-                );
+        //         compilation.namedChunkGroups = Object.assign(
+        //           childCompilation.namedChunkGroups,
+        //           compilation.namedChunkGroups,
+        //         );
 
-                compilation.chunks.forEach(chunk => {
-                  const childChunkFiles = childChunkFileMap[chunk.name];
+        //         const childChunkFileMap = childCompilation.chunks.reduce(
+        //           (chunkMap, chunk) => {
+        //             chunkMap[chunk.name] = chunk.files;
+        //             return chunkMap;
+        //           },
+        //           {},
+        //         );
 
-                  if (childChunkFiles) {
-                    chunk.files.push(
-                      ...childChunkFiles.filter(v => !chunk.files.includes(v)),
-                    );
-                  }
-                });
-              });
+        //         compilation.chunks.forEach(chunk => {
+        //           const childChunkFiles = childChunkFileMap[chunk.name];
 
-              childProcessDone();
-            });
-          },
-        );
+        //           if (childChunkFiles) {
+        //             chunk.files.push(
+        //               ...childChunkFiles.filter(v => !chunk.files.includes(v)),
+        //             );
+        //           }
+        //         });
+        //       });
+
+        //       childProcessDone();
+        //     });
+        //   },
+        // );
 
 
 
