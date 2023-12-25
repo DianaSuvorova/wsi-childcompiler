@@ -10,8 +10,6 @@ class AwesomePlugin {
 
       this.childCompilerName = 'awesome-plugin-compilation';
       this.outputFileName = 'hello.js';
-
-      console.log(path.join(__dirname,'./src'));
       this.compilationEntry  = webpack.config.getNormalizedWebpackOptions({
         entry: {
           main: ['./src/index.js']
@@ -37,9 +35,7 @@ class AwesomePlugin {
 
         new JsonpTemplatePlugin().apply(childCompiler);
 
-        childCompiler.runAsChild((err, entries, childCompilation) => {
-          (err) = console.log(err);
-        });
+        childCompiler.runAsChild((err, entries, childCompilation) => {});
 
     })
   }
